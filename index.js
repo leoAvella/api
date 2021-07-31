@@ -7,13 +7,55 @@ const cors = require('cors');
 
 
 var url = "https://api.mercadolibre.com/sites/MLA/search?q=";
-var corsOptions = {
-    origin: '*',
-    methods: ['GET','POST','DELETE','UPDATE','PUT','PATCH']
-}
 
+var author = {
+        "name": "Deivy Leonardo",
+        "lastname": "Avella Sánchez"
+    };
 app.use(cors());
 
+
+app.get('/api/item/:id', function (req, res) {
+    var endPoint = "https://api.mercadolibre.com/items/";
+    var id = req.params.id;
+    request({
+        url: endPoint+id,
+    }, function (error, response, body) {
+        if (!error && response.statusCode === 200) {
+            const responseItem = JSON.parse(body);
+            var item = {
+                "id": responseItem.id,
+                "title": responseItem.title,
+                "price": {
+                    "currency": responseItem.currency_id,
+                    "amount": responseItem.base_price,
+                    "decimals": responseItem.price,
+                },
+                "picture": responseItem.pictures[0].url,
+                "condition": responseItem.condition,
+                "free_shipping": responseItem.shipping.free_shipping,
+                "sold_quantity": responseItem.sold_quantity,
+                "description": ""
+            }
+
+            var responseApi = {
+                "author": author,
+                "item": item,
+            }
+            request({
+                url: endPoint+id+"/description",
+            },function (errorD, responseD, bodyD) {
+                if (!errorD && responseD.statusCode === 200) {
+                    const responseDescription = JSON.parse(bodyD);
+                    responseApi.item.description = responseDescription.plain_text;
+                }
+                res.send(responseApi);
+            })
+        } else {
+            res.send(response);
+        }
+    })
+});
 
 app.get('/api/items', function(req, res) {
 
@@ -56,10 +98,7 @@ app.get('/api/items', function(req, res) {
             }
 
             var responseApi = {
-                "autor": {
-                    "name": "Deivy Leonardo",
-                    "lastname": "Avella Sánchez"
-                },
+                "author": author,
                 "categories": categories,
                 "items": items
             }
