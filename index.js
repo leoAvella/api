@@ -17,6 +17,7 @@ app.use(cors());
 
 app.get('/api/item/:id', function (req, res) {
     var endPoint = "https://api.mercadolibre.com/items/";
+
     var id = req.params.id;
     request({
         url: endPoint+id,
@@ -69,12 +70,14 @@ app.get('/api/items', function(req, res) {
             var categories = [];
             var items = [];
             const responseSearch = JSON.parse(body);
-            for( i in responseSearch.available_filters ){
-                filter = responseSearch.available_filters[i];
+            for( i in responseSearch.filters ){
+                filter = responseSearch.filters[i];
                 if(filter.id == 'category') {
                     for (j in filter.values) {
-                        categories.push(filter.values[j].name)
-                        if(j ==3) break;
+                        category = filter.values[j];
+                        for (k in category.path_from_root) {
+                            categories.push(category.path_from_root[k].name);
+                        }
                     }
                     break;
                 }
@@ -91,7 +94,8 @@ app.get('/api/items', function(req, res) {
                         "currency": responseSearch.results[i].currency_id,
                         "amount": responseSearch.results[i].price,
 
-                    }
+                    },
+                    state_name: responseSearch.results[i].address.state_name
                 };
                 items.push(item);
                 if (i == 3) break;
